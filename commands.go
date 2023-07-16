@@ -3,24 +3,29 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/fatih/color"
 )
 
-func monitoring(websites map[string]Website) {
-	fmt.Println("Monitoring...")
-	
-	pool := generateWebsiteArray(0)
+const MONITORING_COUNT = 1
+const MONITORING_SLEEP = 1
 
-	for _, url := range pool {
-		isUp := checkIfSiteIsUp(url)
-		websites[url] = Website{checkIfSiteIsUp(url), getCurrentTime()}
-		if(isUp) {
-			fmt.Println(url, "está", color.New(color.FgHiGreen).Sprint("online"))
-		} else {
-			fmt.Println(url, "está", color.New(color.FgHiRed).Sprint("offline"))
+func monitoring(websites map[string]Website) {
+	pool := getAllWebsitesUrls()
+
+	for i := 0; i < MONITORING_COUNT; i++ {
+		fmt.Println("Monitorando pela", color.New(color.BlinkRapid, color.FgHiRed).Sprint(i+1), "vez")
+		for _, url := range pool {
+			statusCode := float64(getStatusCode(url))
+			websites[url] = Website{statusCode, getCurrentTime()}
+			fmt.Println(url, "está com status code", getStatusCodeColorString(int(statusCode)))
 		}
+		fmt.Println("")
+		time.Sleep(MONITORING_SLEEP * time.Second)
 	}
+
+	saveLocallyTests(websites)
 }
 
 func logs(websites map[string]Website) {
@@ -28,11 +33,7 @@ func logs(websites map[string]Website) {
 		fmt.Println(color.New(color.FgHiRed).Sprint("Nenhum site foi monitorado ainda"))
 	}
 	for key, value := range websites {
-		if(value.status) {
-			fmt.Println(key, "estava online em:", value.lastVisited, "")
-		} else {
-			fmt.Println(key, "estava offline em:", value.lastVisited, "")
-		}
+		fmt.Println(key, "está com status code", getStatusCodeColorString(int(value.status)))
 	}
 }
 

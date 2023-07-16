@@ -1,18 +1,25 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 
 type Website struct {
-	status bool
-	lastVisited string
+	status float64 `json:"status"`
+	lastVisited string 	`json:"lastVisited"`
 }
 
 func getCommandValue() int {
@@ -47,48 +54,84 @@ func checkIfSiteIsUp(url string) bool {
 	return response.StatusCode == 200
 }
 
-func generateWebsiteArray(length int) []string {
-	if length == 0 {
-		return []string{
-			"https://random-status-code.herokuapp.com",
-			"https://www.google.com",
-			"https://www.wikipedia.org",
-			"https://www.youtube.com",
+func getStatusCode(url string) int {
+	response, _ := http.Get(url)
+	return response.StatusCode
+}
+
+func getStatusCodeColorString(statusCode int) string {
+	switch statusCode {
+	case 200:
+		return color.New(color.FgHiGreen).Sprint(statusCode)
+	case 404:
+		return color.New(color.FgHiRed).Sprint(statusCode)
+	default:
+		return color.New(color.FgHiYellow).Sprint(statusCode)
+	}
+}
+
+func getAllWebsitesUrls() [] string{
+	var urls []string
+	file, err := os.Open("urls.txt")
+	if err != nil {
+		fmt.Println("Erro ao abrir arquivo")
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		urls = append(urls, scanner.Text())
+	}
+	return urls[:1]
+}
+
+func getLocallySavedTests() map[string]Website{
+	filedData, err := ioutil.ReadFile("dictionary.json")
+	if err != nil {
+		fmt.Println("Não foi possível recuperar os dados salvos localmente")
+		return make(map[string]Website)
+	}else {
+		color.New(color.FgHiGreen).Println("Dados recuperados com sucesso")
+		var storedDictionary map[string]map[string]interface{}
+		err = json.Unmarshal(filedData, &storedDictionary)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return convertToWebsiteDict(storedDictionary)
+	}
+}
+
+func convertToWebsiteDict(storedDictionary map[string]map[string]interface{}) map[string]Website {
+	websiteDict := make(map[string]Website)
+	for key, value := range storedDictionary {
+		websiteDict[key] = Website{
+			status: value["status"].(float64),
+			lastVisited: value["lastVisited"].(string),
 		}
 	}
-	websites := []string{
-		"https://random-status-code.herokuapp.com",
-		"https://www.google.com",
-		"https://www.wikipedia.org",
-		"https://www.youtube.com",
-		"https://www.github.com",
-		"https://www.amazon.com",
-		"https://www.twitter.com",
-		"https://www.linkedin.com",
-		"https://www.reddit.com",
-		"https://www.nytimes.com",
-		"https://www.stackoverflow.com",
-		"https://www.microsoft.com",
-		"https://www.apple.com",
-		"https://www.netflix.com",
-		"https://www.instagram.com",
-		"https://www.spotify.com",
-		"https://www.dropbox.com",
-		"https://www.ubuntu.com",
-		"https://www.oracle.com",
-		"https://www.ibm.com",
-		"https://www.nike.com",
-		"https://www.adidas.com",
-		"https://www.puma.com",
-		"https://www.bbc.co.uk",
-		"https://www.cnn.com",
-		"https://www.yahoo.com",
-		"https://www.twitch.tv",
-		"https://www.facebook.com",
-		"https://www.instagram.com",
-		"https://www.snapchat.com",
-		"https://www.pinterest.com",
+	return websiteDict
+}
+
+func saveLocallyTests(websites map[string]Website) bool {
+	// golang não permite que structs sejam serializadas diretamente
+	// logo é preciso converter para um formato que possa ser serializado
+	serializableDict := make(map[string]map[string]interface{})
+	for key, value := range websites {
+		serializableDict[key] = map[string]interface{}{
+			"status":      value.status,
+			"lastVisited": value.lastVisited,
+		}
 	}
 
-	return websites
+	jsonData, err := json.Marshal(serializableDict)
+	if err != nil {
+		return false
+	}
+
+	err = ioutil.WriteFile("dictionary.json", jsonData, 0666)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

@@ -8,13 +8,12 @@ import (
 func main() {
 	var command int 
 
-	websiteDict := make(map[string]Website)
+	websiteDict := getLocallySavedTests()
 	for  {
 		printMenu()
 
 		fmt.Println("Escolha uma opção: ")
 		command = getCommandValue()
-		fmt.Println("O comando escolhido foi", command)
 		
 		switch command {
 			case 1: monitoring(websiteDict)

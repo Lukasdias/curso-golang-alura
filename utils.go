@@ -82,7 +82,7 @@ func getAllWebsitesUrls() [] string{
 	for scanner.Scan() {
 		urls = append(urls, scanner.Text())
 	}
-	return urls[:1]
+	return urls
 }
 
 func getLocallySavedTests() map[string]Website{

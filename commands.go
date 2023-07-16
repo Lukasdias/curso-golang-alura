@@ -8,7 +8,7 @@ import (
 	"github.com/fatih/color"
 )
 
-const MONITORING_COUNT = 1
+const MONITORING_COUNT = 5
 const MONITORING_SLEEP = 1
 
 func monitoring(websites map[string]Website) {

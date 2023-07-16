@@ -1,5 +1,9 @@
 # Monitor de Sites
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/golang-samples/gopher-vector/master/gopher.png" alt="Gopher" width="200" height="200">
+</p>
+
 Este é um projeto Go que implementa um monitor de sites. A aplicação permite monitorar vários sites para verificar se estão online, exibir os logs com o resultado da verificação e sair da aplicação.
 
 ## Funcionalidades
